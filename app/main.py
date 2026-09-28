@@ -63,7 +63,10 @@ if "frame_count" not in st.session_state: st.session_state.frame_count = 0
 
 # ─── Sidebar ──────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Police_lights_on.svg/120px-Police_lights_on.svg.png", width=80)
+    try:
+        st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Police_lights_on.svg/120px-Police_lights_on.svg.png", width=80)
+    except Exception:
+        st.markdown("# 🚨")
     st.title("🚦 Traffic VMS")
     st.caption("Prototype — Nagpur Traffic Dept.")
     st.divider()
@@ -83,7 +86,7 @@ with st.sidebar:
     stat4 = st.empty()
 
     st.divider()
-    if st.button("🗑️ Reset Session", width="stretch"):
+    if st.button("🗑️ Reset Session", use_container_width=True):
         for key in ["pipeline","violations","challans","frame_count"]:
             st.session_state[key] = [] if key in ["violations","challans"] else None
             if key == "frame_count":
@@ -136,14 +139,20 @@ with tab_live:
                 "▶ Start Detection",
                 type="primary",
                 disabled=(video_source is None),
-                width="stretch",
+                use_container_width=True,
             )
         with btn_col2:
-            stop_btn = st.button("⏹ Stop", width="stretch")
+            stop_btn = st.button("⏹ Stop", use_container_width=True)
 
     with col_violations:
         st.subheader("🚨 Live Violations")
         violation_feed = st.empty()
+
+    # Cached pipeline loader
+    @st.cache_resource(show_spinner="Loading AI models (first time ~30s)...")
+    def _load_pipeline(anpr_enabled: bool):
+        from pipeline import Pipeline
+        return Pipeline(enable_anpr=anpr_enabled)
 
     # ── Detection loop ────────────────────────────────────────────────────────
     if start_btn and video_source is not None:
@@ -154,13 +163,7 @@ with tab_live:
         # Apply UI settings to config
         config.YOLO_CONFIDENCE = conf_thresh
 
-        # Lazy-load pipeline (expensive; keep in session)
-        if st.session_state.pipeline is None:
-            with st.spinner("Loading AI models (first time ~30s)..."):
-                from pipeline import Pipeline
-                st.session_state.pipeline = Pipeline(enable_anpr=enable_anpr)
-
-        pipeline = st.session_state.pipeline
+        pipeline = _load_pipeline(enable_anpr)
 
         # Get video properties for progress bar
         cap_probe = cv2.VideoCapture(str(video_source) if video_source != 0 else 0)
@@ -174,7 +177,7 @@ with tab_live:
 
                 # Display annotated frame
                 frame_rgb = cv2.cvtColor(pf.frame, cv2.COLOR_BGR2RGB)
-                frame_display.image(frame_rgb, width="stretch", caption=f"Frame #{pf.frame_id}")
+                frame_display.image(frame_rgb, use_container_width=True, caption=f"Frame #{pf.frame_id}")
 
                 # Progress
                 if total_frames > 0:
@@ -212,7 +215,6 @@ with tab_live:
 
         except Exception as e:
             st.error(f"Pipeline error: {e}")
-            raise
 
         st.session_state.processing = False
         progress_bar.empty()
@@ -275,7 +277,7 @@ with tab_challans:
                     img = cv2.imread(c.evidence_path)
                     if img is not None:
                         st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
-                                 caption="Evidence Frame", width="stretch")
+                                 caption="Evidence Frame", use_container_width=True)
 
 
 # ═══════════════════════════════════════════════════════
@@ -296,7 +298,7 @@ with tab_evidence:
                 with cols[i % 3]:
                     st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
                              caption=f"{c.challan_id} | {c.violation_desc}",
-                             width="stretch")
+                             use_container_width=True)
                     st.caption(f"Plate: `{c.vehicle_number}` | ₹{c.fine_amount:,}")
 
 

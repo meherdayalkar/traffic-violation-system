@@ -82,6 +82,10 @@ class Pipeline:
             if not ret:
                 break
 
+            if raw_frame is not None and raw_frame.shape[1] > 960:
+                from utils.helpers import resize_frame
+                raw_frame = resize_frame(raw_frame, width=960)
+
             frame_idx += 1
             if max_frames and frame_idx > max_frames:
                 break
