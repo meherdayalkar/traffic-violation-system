@@ -15,16 +15,21 @@ from detection.detector import Detection
 
 def iou(bb_test: np.ndarray, bb_gt: np.ndarray) -> float:
     """Compute IOU between two bboxes [x1,y1,x2,y2]."""
+    bb_test = np.asarray(bb_test, dtype=float).flatten()
+    bb_gt   = np.asarray(bb_gt, dtype=float).flatten()
     xx1 = max(bb_test[0], bb_gt[0])
     yy1 = max(bb_test[1], bb_gt[1])
     xx2 = min(bb_test[2], bb_gt[2])
     yy2 = min(bb_test[3], bb_gt[3])
-    w = max(0., xx2 - xx1)
-    h = max(0., yy2 - yy1)
+    w = max(0.0, xx2 - xx1)
+    h = max(0.0, yy2 - yy1)
     inter = w * h
-    a1 = (bb_test[2]-bb_test[0]) * (bb_test[3]-bb_test[1])
-    a2 = (bb_gt[2]-bb_gt[0])   * (bb_gt[3]-bb_gt[1])
-    return inter / float(a1 + a2 - inter + 1e-6)
+    a1 = (bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1])
+    a2 = (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1])
+    union = a1 + a2 - inter
+    if union <= 0:
+        return 0.0
+    return float(inter / (union + 1e-6))
 
 
 @dataclass
@@ -42,6 +47,7 @@ class Track:
     center_history: List[Tuple[int,int]] = field(default_factory=list)
 
     def __post_init__(self):
+        self.bbox = np.asarray(self.bbox, dtype=int).flatten()
         self._kf = self._build_kalman(self.bbox)
 
     def _build_kalman(self, bbox: np.ndarray) -> KalmanFilter:
@@ -71,27 +77,29 @@ class Track:
 
     @staticmethod
     def _bbox_to_z(bbox):
-        w = bbox[2] - bbox[0]
-        h = bbox[3] - bbox[1]
-        x = bbox[0] + w / 2.
-        y = bbox[1] + h / 2.
+        b = np.asarray(bbox, dtype=float).flatten()
+        w = b[2] - b[0]
+        h = b[3] - b[1]
+        x = b[0] + w / 2.0
+        y = b[1] + h / 2.0
         s = w * h
         r = w / float(h + 1e-6)
-        return np.array([x, y, s, r]).reshape((4, 1))
+        return np.array([x, y, s, r], dtype=float).reshape((4, 1))
 
     @staticmethod
     def _z_to_bbox(z, score=None):
+        z = np.asarray(z, dtype=float).flatten()
         w = np.sqrt(abs(z[2] * z[3]))
         h = z[2] / (w + 1e-6)
-        x1 = z[0] - w / 2.
-        y1 = z[1] - h / 2.
-        x2 = z[0] + w / 2.
-        y2 = z[1] + h / 2.
-        return np.array([x1, y1, x2, y2]).astype(int)
+        x1 = z[0] - w / 2.0
+        y1 = z[1] - h / 2.0
+        x2 = z[0] + w / 2.0
+        y2 = z[1] + h / 2.0
+        return np.array([x1, y1, x2, y2], dtype=int)
 
     def predict(self):
-        if self._kf.x[6] + self._kf.x[2] <= 0:
-            self._kf.x[6] = 0.
+        if float(self._kf.x[6, 0] + self._kf.x[2, 0]) <= 0:
+            self._kf.x[6, 0] = 0.0
         self._kf.predict()
         self.age += 1
         self.time_since_update += 1
@@ -100,7 +108,7 @@ class Track:
     def update(self, det: Detection):
         self._kf.update(self._bbox_to_z(det.bbox))
         self.bbox       = self._z_to_bbox(self._kf.x)
-        self.confidence = det.confidence
+        self.confidence = float(det.confidence)
         self.hits      += 1
         self.time_since_update = 0
         cx = int((self.bbox[0] + self.bbox[2]) / 2)
@@ -125,9 +133,10 @@ class Track:
 
     @property
     def center(self) -> Tuple[int, int]:
+        b = self.bbox.flatten()
         return (
-            int((self.bbox[0] + self.bbox[2]) / 2),
-            int((self.bbox[1] + self.bbox[3]) / 2),
+            int((b[0] + b[2]) / 2),
+            int((b[1] + b[3]) / 2),
         )
 
 

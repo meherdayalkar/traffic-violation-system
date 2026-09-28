@@ -200,7 +200,8 @@ class ViolationEngine:
         Swap with a dedicated YOLO helmet model call when available.
         """
         try:
-            bx1, by1, bx2, by2 = bike.bbox
+            b = np.asarray(bike.bbox, dtype=int).flatten()
+            bx1, by1, bx2, by2 = int(b[0]), int(b[1]), int(b[2]), int(b[3])
             h_frame, w_frame   = frame.shape[:2]
 
             # Head zone: slightly above bike top down to 1/3 height of bike
@@ -325,7 +326,8 @@ class ViolationEngine:
         persons: List[Track],
     ) -> List[Track]:
         """Return persons whose center falls inside/near the bike bbox."""
-        bx1, by1, bx2, by2 = bike.bbox
+        b = np.asarray(bike.bbox, dtype=int).flatten()
+        bx1, by1, bx2, by2 = int(b[0]), int(b[1]), int(b[2]), int(b[3])
         result = []
         for p in persons:
             px, py = p.center
@@ -350,15 +352,16 @@ class ViolationEngine:
             violation_type = vtype,
             track_id       = track.track_id,
             frame_id       = frame_id,
-            bbox           = track.bbox.copy(),
-            confidence     = confidence,
+            bbox           = np.asarray(track.bbox, dtype=int).flatten(),
+            confidence     = float(confidence),
             evidence_frame = evidence,
             status         = status,
         )
 
     @staticmethod
     def _annotate_evidence(frame: np.ndarray, track: Track, label: str) -> np.ndarray:
-        x1, y1, x2, y2 = int(track.bbox[0]), int(track.bbox[1]), int(track.bbox[2]), int(track.bbox[3])
+        b = np.asarray(track.bbox, dtype=int).flatten()
+        x1, y1, x2, y2 = int(b[0]), int(b[1]), int(b[2]), int(b[3])
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for i, text in enumerate([f"VIOLATION: {label}", f"ID:{track.track_id}", ts]):
@@ -370,7 +373,8 @@ class ViolationEngine:
     def draw_violations(frame: np.ndarray, violations: List["Violation"]) -> np.ndarray:
         frame = frame.copy()
         for v in violations:
-            x1, y1, x2, y2 = int(v.bbox[0]), int(v.bbox[1]), int(v.bbox[2]), int(v.bbox[3])
+            b = np.asarray(v.bbox, dtype=int).flatten()
+            x1, y1, x2, y2 = int(b[0]), int(b[1]), int(b[2]), int(b[3])
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
             cv2.putText(frame, v.violation_type.upper().replace("_", " "),
                         (x1, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 255), 2)

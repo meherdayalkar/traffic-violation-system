@@ -154,7 +154,8 @@ class Pipeline:
         }
         for track in tracked.tracks:
             color = TRACK_COLORS.get(track.class_name, (200, 200, 200))
-            x1, y1, x2, y2 = int(track.bbox[0]), int(track.bbox[1]), int(track.bbox[2]), int(track.bbox[3])
+            b = np.asarray(track.bbox, dtype=int).flatten()
+            x1, y1, x2, y2 = int(b[0]), int(b[1]), int(b[2]), int(b[3])
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             label = f"#{track.track_id} {track.class_name}"
             cv2.putText(frame, label, (x1, max(y1-6, 12)),

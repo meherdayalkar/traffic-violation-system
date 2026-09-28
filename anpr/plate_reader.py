@@ -84,7 +84,8 @@ class ANPRReader:
         expand: fractional expansion of bbox for context.
         """
         h, w = frame.shape[:2]
-        x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+        b = np.asarray(bbox, dtype=int).flatten()
+        x1, y1, x2, y2 = int(b[0]), int(b[1]), int(b[2]), int(b[3])
         dw = int((x2 - x1) * expand)
         dh = int((y2 - y1) * expand)
         x1 = int(max(0, x1 - dw))
