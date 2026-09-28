@@ -51,6 +51,47 @@ API docs at: **http://localhost:8000/docs**
 
 ---
 
+## 🌐 Deployment Guide
+
+This system is configured for seamless deployment on **Streamlit Community Cloud** (free, one-click), **Hugging Face Spaces**, and **Docker** (Render, Railway, Cloud Run, or any Linux server).
+
+### Option 1 — Streamlit Community Cloud (Recommended & Free)
+1. Ensure your latest changes are pushed to GitHub (`meherdayalkar/traffic-violation-system` on branch `main`).
+2. Go to **[share.streamlit.io](https://share.streamlit.io/)** and sign in with GitHub.
+3. Click **"Create app"** / **"New app"**.
+4. Fill in the deployment details:
+   - **Repository:** `meherdayalkar/traffic-violation-system`
+   - **Branch:** `main`
+   - **Main file path:** `app/main.py`
+5. Click **"Deploy!"**
+   - The build automatically installs required Linux libraries from `packages.txt` (`libgl1`, `ffmpeg`, etc.) and CPU PyTorch wheels from `requirements.txt`.
+   - The app will be live with a public HTTPS URL.
+
+### Option 2 — Docker Container (Local / Cloud Server / Render / Railway)
+The project includes a production-ready `Dockerfile` and `docker-compose.yml`.
+
+**Single Container (Streamlit UI):**
+```bash
+docker build -t traffic-violation-system .
+docker run -p 8501:8501 traffic-violation-system
+```
+Opens at: **http://localhost:8501**
+
+**Full Stack with Docker Compose (UI + FastAPI):**
+```bash
+docker compose up -d
+```
+- **Streamlit Web UI:** http://localhost:8501
+- **FastAPI REST API:** http://localhost:8000/docs
+
+### Option 3 — Hugging Face Spaces (16GB RAM CPU)
+1. Go to [huggingface.co/spaces](https://huggingface.co/spaces) and click **"Create new Space"**.
+2. Space SDK: **Streamlit**.
+3. Hardware: **Free CPU (16GB RAM)**.
+4. Connect or push this repository.
+
+---
+
 ## 📁 Folder Structure
 
 ```

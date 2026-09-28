@@ -5,6 +5,13 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 print("[1] Testing basic imports...")
 try:
     import config

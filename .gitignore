@@ -39,3 +39,7 @@ data/sample/*.mkv
 # OS
 Thumbs.db
 .DS_Store
+
+# Nested duplicate folder
+traffic_violation_system/
+
